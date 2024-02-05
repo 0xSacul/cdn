@@ -10,36 +10,17 @@ const app = express();
 const port = process.env.PORT;
 const serverStartTime = Date.now();
 
-// ENABLE CORS & JWT PROTECTION
-const ENABLE = false;
-
 /* =========================== DATABASE ========================== */
 import { connect, isConnected } from "./database/client";
 connect();
 
-/* =========================== CORS & JWT ========================== */
-const corsWhitelist = [
-  "http://localhost:3000",
-  "https://lifeinvader.visionrp.fr",
-  "https://life-invader.up.railway.app",
-];
+/* =========================== CORS ========================== */
 const corsOptions = {
-  origin: function (origin: any, callback: any) {
-    if (!ENABLE) {
-      return callback(null, true);
-    } else {
-      if (corsWhitelist.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(`[ERROR/CORS] Not allowed by CORS: ${origin}`);
-      }
-    }
-  },
+  origin: "*",
+  methods: "GET,POST,DELETE",
   maxAllowedContentLength: 100000000, // 100MB
 };
 app.use(cors(corsOptions));
-
-// JWT SOON (WIP)
 
 /* =========================== MIDDLEWARE ========================== */
 
@@ -51,8 +32,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Rate limit - 5 requests per second
 const limiter = rateLimit({
-  windowMs: 30000,
-  max: 10,
+  windowMs: 10000, // 10 seconds
+  max: 1,
   message: "Too many requests, please try again later.",
   statusCode: 429,
 });
@@ -86,7 +67,11 @@ app.get("*", (req: Request, res: Response) => {
 
 /* =========================== ROUTES ========================== */
 
-// Routes soon (WIP)
+import Base from "./routes/Base";
+import LifeInvader from "./routes/Lifeinvader";
+
+app.use("/", Base);
+app.use("/lifeinvader", LifeInvader);
 
 /* =========================== START ========================== */
 
