@@ -59,12 +59,6 @@ app.get("/health", (req: Request, res: Response) => {
   });
 });
 
-app.get("*", (req: Request, res: Response) => {
-  res.status(404).json({
-    error: "[ERROR/ROUTE] Route not found",
-  });
-});
-
 /* =========================== ROUTES ========================== */
 
 import Base from "./routes/Base";
