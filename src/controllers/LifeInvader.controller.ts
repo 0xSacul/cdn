@@ -1,18 +1,5 @@
 import { Request, Response } from "express";
-import multer from "multer";
 import LifeInvaderFile from "../models/LifeInvaderFile";
-
-const multerStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const { server, owner } = req.params;
-    const path = `./uploads/lifeinvader/${server}/${owner}`;
-    cb(null, path);
-  },
-  filename: (req, file, cb) => {
-    const { filename } = req.params;
-    cb(null, filename);
-  },
-});
 
 const getContentTypes = (filename: string) => {
   const types = {
@@ -53,6 +40,8 @@ export const getFile = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "[ERROR/REQ] Missing parameters" });
 
   try {
+    const file = `${process.cwd()}/uploads/lifeinvader/${server}/${owner}/${filename}`;
+
     const fileExists = await LifeInvaderFile.findOne({
       server,
       owner,
@@ -67,19 +56,53 @@ export const getFile = async (req: Request, res: Response) => {
       { $inc: { views: 1 } }
     );
 
-    const file = `${process.cwd()}/uploads/lifeinvader/${server}/${owner}/${filename}`;
     return res
       .status(200)
       .set("Content-Type", getContentTypes(filename))
       .sendFile(file);
   } catch (error) {
-    return res.status(500).json({ error: "[ERROR/DB] Database error" });
+    return res
+      .status(500)
+      .json({ error: "[ERROR/INTERNAL] Internal Server Error", trace: error });
   }
 };
 
 export const uploadFile = async (req: Request, res: Response) => {
+  try {
+    const paths = (req.files as Express.Multer.File[])?.map(
+      (file: Express.Multer.File) =>
+        `https://cdn.sacul.cloud/lifeinvader/${req.params.server}/${req.params.owner}/${file.filename}`
+    );
+
+    for (const file of req.files as Express.Multer.File[]) {
+      const { server, owner } = req.params;
+      const { originalname: filename, size } = file;
+      const fileData = new LifeInvaderFile({
+        server,
+        owner,
+        filename,
+        size,
+        path: `https://cdn.sacul.cloud/lifeinvader/${server}/${owner}/${filename}`,
+        views: 0,
+      });
+      await fileData.save();
+    }
+
+    return res.status(200).json({ message: "Files uploaded", paths });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: "[ERROR/INTERNAL] Internal Server Error", trace: error });
+  }
+};
+
+/* export const uploadFile = async (req: Request, res: Response) => {
   const { server, owner } = req.params;
   const { files } = req.body;
+
+  console.log("server", server);
+  console.log("owner", owner);
+  console.log("files", files);
 
   if (!server || !owner || !files)
     return res.status(400).json({ error: "[ERROR/REQ] Missing parameters" });
@@ -93,27 +116,36 @@ export const uploadFile = async (req: Request, res: Response) => {
 
     const paths = [];
     for (const file of files) {
-      const { filename, size, path, metadata } = file;
+      console.log(file);
+      const { name, size, metadata } = file;
       const fileData = new LifeInvaderFile({
         server,
         owner,
-        filename,
+        filename: name,
         size,
-        path,
+        path:
+          "https://cdn.sacul.cloud/lifeinvader/" +
+          server +
+          "/" +
+          owner +
+          "/" +
+          name,
         metadata,
         views: 0,
       });
       await fileData.save();
       paths.push(
-        `https://cdn.sacul.cloud/lifeinvader/${server}/${owner}/${filename}`
+        `https://cdn.sacul.cloud/lifeinvader/${server}/${owner}/${name}`
       );
     }
 
     return res.status(200).json({ message: "Files uploaded", paths });
   } catch (error) {
-    return res.status(500).json({ error: "[ERROR/DB] Database error" });
+    return res
+      .status(500)
+      .json({ error: "[ERROR] Error with /upload route.", message: error });
   }
-};
+}; */
 
 export const deleteFile = async (req: Request, res: Response) => {
   const { server, owner, filename } = req.params;

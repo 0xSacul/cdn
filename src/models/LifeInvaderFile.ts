@@ -22,15 +22,15 @@ const lifeInvaderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    metadata: {
-      type: Object,
-      required: true,
-      default: {},
-    },
     views: {
       type: Number,
       required: true,
       default: 0,
+    },
+    uploadedAt: {
+      type: Date,
+      required: true,
+      default: Date.now,
     },
   },
   { timestamps: true }
