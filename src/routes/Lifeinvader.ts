@@ -5,7 +5,7 @@ import { uploadLifeInvader } from "..";
 const LifeInvader = express.Router();
 console.log("[INFO] Life Invader routes loaded");
 
-LifeInvader.get("/:server/:owner/:filename", getFile);
+//LifeInvader.get("/:server/:owner/:filename", getFile);
 LifeInvader.post(
   "/:server/:owner",
   uploadLifeInvader.array("files", 10), // 10 files max

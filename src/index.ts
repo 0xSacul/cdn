@@ -30,6 +30,7 @@ const corsOptions = {
     }
   },
   methods: "GET,POST,DELETE",
+  credentials: true,
 };
 app.use(cors(corsOptions));
 
@@ -40,12 +41,19 @@ app.use(bodyParser.json());
 // Parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
 
-// Rate limit - 5 requests per second
+// Rate limit - 5 requests per second for POST requests
+// Unlimitted requests for GET requests
 const limiter = rateLimit({
-  windowMs: 10000, // 10 seconds
-  max: 10,
-  message: "Too many requests, please try again later.",
-  statusCode: 429,
+  windowMs: 1000,
+  max: 5,
+  skip: (req: Request) => {
+    return req.method === "GET";
+  },
+  handler: (req: Request, res: Response) => {
+    res.status(429).json({
+      error: "[ERROR/LIMITER] Too many requests, please try again later.",
+    });
+  },
 });
 app.use(limiter);
 app.set("trust proxy", 1);
@@ -87,6 +95,9 @@ app.get("/health", (req: Request, res: Response) => {
     database: isConnected(),
   });
 });
+
+/* =========================== STATIC ========================== */
+app.use("/lifeinvader", express.static("uploads/lifeinvader"));
 
 /* =========================== ROUTES ========================== */
 
